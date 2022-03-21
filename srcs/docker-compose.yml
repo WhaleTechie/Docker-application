@@ -1,0 +1,71 @@
+version: '3.7'
+
+services:
+  mariadb:
+    container_name: mariadb
+    build: 
+      context: ./requirements/mariadb/
+      dockerfile: Dockerfile
+    image: "mariadb:lkrinova2022_x"
+    expose:
+      - "3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - docker_network
+    env_file: .env
+    restart: always
+
+  wordpress:
+    container_name: wordpress
+    depends_on:
+      - mariadb
+    build: ./requirements/wordpress/
+    image: "wordpress:lkrinova2022_y"
+    expose:
+      - "9000"
+    volumes:
+      - wordpress:/var/www/html
+    networks:
+      - docker_network
+    env_file: .env
+    restart: always
+
+  nginx:
+    container_name: nginx
+    depends_on:
+      - wordpress
+    build:
+      context: ./requirements/nginx/
+      dockerfile: Dockerfile
+    image: "nginx:lkrinova2022_z"
+    ports:
+      - "443:443"
+    expose:
+      - "443"
+    volumes:
+      - wordpress:/var/www/html/
+    networks:
+      - docker_network
+    env_file: .env
+    restart: always
+
+volumes:
+  dbdata:
+    driver: local
+    name:   dbdata
+    driver_opts:
+      type: none
+      o:    bind
+      device: /root/data/dbdata
+  wordpress:
+    driver: local
+    name:   wordpress
+    driver_opts:
+      type: none
+      o:    bind
+      device: /home/data/wordpress
+
+networks:
+  docker_network:
+    driver: bridge
